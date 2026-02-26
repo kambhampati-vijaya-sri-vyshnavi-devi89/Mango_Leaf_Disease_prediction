@@ -1,0 +1,22 @@
+# Database
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+env/
+
+# Media files (user uploads)
+media/
+
+# Keras model (optional - it's large)
+# *.keras
+
+# IDE
+.vscode/
+.idea/

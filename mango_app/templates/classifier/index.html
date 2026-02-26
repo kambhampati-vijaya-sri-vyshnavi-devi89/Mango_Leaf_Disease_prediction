@@ -1,0 +1,533 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MangoScan — AI Leaf Disease Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g1:#0f2419; --g2:#1a3a2a; --g3:#2d6a4f; --g4:#52b788; --g5:#95d5b2;
+  --amber:#f4a261; --red:#e63946; --yellow:#f9c74f; --cream:#fefae0;
+  --card:rgba(255,255,255,0.04); --border:rgba(149,213,178,0.18);
+  --shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--g1);color:var(--cream);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(82,183,136,.12) 0%,transparent 60%),radial-gradient(ellipse 50% 70% at 85% 85%,rgba(244,162,97,.07) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(15,36,25,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:8px;height:60px}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;background:linear-gradient(135deg,var(--cream),var(--g4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:auto;text-decoration:none}
+.nav-link{padding:6px 16px;border-radius:8px;font-size:.875rem;font-weight:500;color:var(--g5);text-decoration:none;transition:.2s;white-space:nowrap}
+.nav-link:hover,.nav-link.active{background:rgba(82,183,136,.15);color:var(--cream)}
+.nav-stats{font-size:.78rem;color:var(--g5);opacity:.6;padding:4px 12px;border:1px solid var(--border);border-radius:99px}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+
+/* HERO */
+.hero{text-align:center;margin-bottom:48px;animation:fadeDown .7s ease both}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(82,183,136,.12);border:1px solid rgba(82,183,136,.25);border-radius:99px;padding:5px 14px;font-size:.78rem;color:var(--g4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:900;line-height:1.05;background:linear-gradient(135deg,var(--cream) 0%,var(--g5) 55%,var(--amber) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{margin-top:12px;font-size:1rem;font-weight:300;color:var(--g5);opacity:.8;max-width:520px;margin-left:auto;margin-right:auto}
+
+/* STATS STRIP */
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px;animation:fadeUp .8s ease .1s both}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:.3s}
+.stat-card:hover{border-color:rgba(82,183,136,.4);transform:translateY(-2px)}
+.stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--g4)}
+.stat-label{font-size:.78rem;color:var(--g5);opacity:.65;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:780px){.main-grid{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:28px;backdrop-filter:blur(16px);transition:.3s;animation:fadeUp .8s ease .2s both}
+.card:hover{border-color:rgba(82,183,136,.35)}
+.card-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--g5);opacity:.6;margin-bottom:16px}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed rgba(149,213,178,.3);border-radius:14px;padding:48px 20px;text-align:center;cursor:pointer;transition:.3s;position:relative;background:rgba(82,183,136,.03)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--g4);background:rgba(82,183,136,.08);transform:scale(1.01)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:44px;display:block;margin-bottom:12px;transition:.3s}
+.drop-zone:hover .drop-icon{transform:translateY(-5px)}
+.drop-title{font-size:1rem;font-weight:500;margin-bottom:5px}
+.drop-sub{font-size:.8rem;color:var(--g5);opacity:.6}
+
+/* PREVIEW */
+#preview-section{display:none;animation:fadeUp .4s ease both}
+#preview-img{width:100%;max-height:260px;object-fit:cover;border-radius:12px;border:1.5px solid var(--border)}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;padding:12px 20px;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;border:none;transition:.25s;letter-spacing:.02em}
+.btn-primary{background:linear-gradient(135deg,var(--g3),var(--g4));color:#fff;box-shadow:0 4px 18px rgba(82,183,136,.3)}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(82,183,136,.4)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--g5)}
+.btn-outline:hover{border-color:var(--g4);background:rgba(82,183,136,.08)}
+.btn-amber{background:linear-gradient(135deg,#c47b2b,var(--amber));color:#fff;box-shadow:0 4px 18px rgba(244,162,97,.25)}
+.btn-amber:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(244,162,97,.35)}
+.btn-red{background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.3);color:#f4827e}
+.btn-red:hover{background:rgba(230,57,70,.25)}
+
+/* LOADING */
+#loading{display:none;text-align:center;padding:36px 0;animation:fadeUp .4s ease both}
+.spinner{width:48px;height:48px;margin:0 auto 16px;border:3px solid rgba(149,213,178,.12);border-top-color:var(--g4);border-radius:50%;animation:spin .7s linear infinite}
+.loading-text{color:var(--g5);font-size:.9rem;font-weight:300}
+
+/* ERROR */
+#error-box{display:none;background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.25);border-radius:12px;padding:20px;margin-top:16px;animation:fadeUp .4s ease both}
+.err-icon{font-size:28px;margin-bottom:8px}
+.err-text{color:#f4827e;font-size:.9rem}
+
+/* RESULTS PANEL */
+#results-panel{display:none;animation:fadeUp .5s ease both}
+.result-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+.result-thumb{width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0}
+.result-meta{flex:1}
+.result-label-tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--g5);opacity:.6;margin-bottom:4px}
+.result-disease{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;line-height:1.2;color:var(--cream)}
+.result-conf{font-size:.875rem;color:var(--amber);font-weight:500;margin-top:3px}
+.severity-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:600;margin-top:6px;border:1px solid}
+.sev-high{background:rgba(230,57,70,.15);color:#f4827e;border-color:rgba(230,57,70,.3)}
+.sev-medium{background:rgba(244,162,97,.15);color:var(--amber);border-color:rgba(244,162,97,.3)}
+.sev-none,.sev-low{background:rgba(82,183,136,.15);color:var(--g4);border-color:rgba(82,183,136,.3)}
+
+/* BARS */
+.bars-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--g5);opacity:.55;margin:16px 0 10px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-name{font-size:.8rem;min-width:130px;color:var(--cream);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:7px;background:rgba(149,213,178,.1);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g3),var(--g4));width:0%;transition:width .9s cubic-bezier(.34,1.56,.64,1)}
+.bar-fill.top{background:linear-gradient(90deg,var(--g4),var(--amber))}
+.bar-pct{font-size:.75rem;min-width:42px;text-align:right;color:var(--g5);opacity:.75}
+
+/* ACTION BUTTONS IN RESULTS */
+.action-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.action-row .btn{min-width:unset;flex:1;padding:10px 14px;font-size:.82rem}
+
+/* DISEASE INFO TABS */
+#disease-info-panel{display:none;margin-top:32px;animation:fadeUp .6s ease both}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px}
+.tab-btn{padding:7px 16px;border-radius:99px;font-size:.8rem;font-weight:500;cursor:pointer;border:1px solid transparent;color:var(--g5);background:transparent;transition:.2s;font-family:'DM Sans',sans-serif}
+.tab-btn:hover{background:rgba(82,183,136,.1);color:var(--cream)}
+.tab-btn.active{background:rgba(82,183,136,.18);border-color:rgba(82,183,136,.35);color:var(--g4)}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .3s ease both}
+.tab-content h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--g4);margin-bottom:10px}
+.info-desc{font-size:.9rem;line-height:1.7;color:var(--cream);opacity:.85;margin-bottom:14px}
+.sci-name{font-style:italic;font-size:.85rem;color:var(--g5);margin-bottom:12px}
+.info-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.info-list li{font-size:.875rem;color:var(--cream);opacity:.85;padding:8px 12px;background:rgba(82,183,136,.05);border-radius:8px;border-left:3px solid var(--g3);line-height:1.5}
+.info-list.treatment li{border-left-color:var(--amber)}
+.info-list.prevention li{border-left-color:var(--g4)}
+.info-list.spread li{border-left-color:#e63946}
+.info-list.organic li{border-left-color:#74c69d}
+.type-badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:600;background:rgba(82,183,136,.15);color:var(--g4);border:1px solid rgba(82,183,136,.25);margin-bottom:12px}
+
+/* FEEDBACK MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;backdrop-filter:blur(8px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex;animation:fadeUp .3s ease both}
+.modal{background:#0f2419;border:1.5px solid var(--border);border-radius:20px;padding:32px;max-width:440px;width:calc(100% - 32px);position:relative}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:4px;color:var(--cream)}
+.modal-sub{font-size:.85rem;color:var(--g5);opacity:.7;margin-bottom:24px}
+.modal-close{position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--g5);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:.2s}
+.modal-close:hover{background:rgba(255,255,255,.08)}
+.form-group{margin-bottom:18px}
+.form-label{font-size:.8rem;font-weight:500;color:var(--g5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:block}
+.star-row{display:flex;gap:8px}
+.star-btn{font-size:1.8rem;background:transparent;border:none;cursor:pointer;filter:grayscale(1);opacity:.4;transition:.2s;padding:2px}
+.star-btn.active,.star-btn:hover{filter:none;opacity:1;transform:scale(1.1)}
+.radio-row{display:flex;gap:10px}
+.radio-opt{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;text-align:center;font-size:.85rem;cursor:pointer;transition:.2s;color:var(--g5)}
+.radio-opt:hover,.radio-opt.selected{border-color:var(--g4);background:rgba(82,183,136,.1);color:var(--cream)}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.9rem;resize:vertical;min-height:80px;transition:.2s}
+.form-input:focus{outline:none;border-color:var(--g4)}
+.form-input::placeholder{color:var(--g5);opacity:.4}
+.form-select{width:100%;background:#0f2419;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.9rem}
+.form-select option{background:#0f2419}
+.success-toast{position:fixed;bottom:24px;right:24px;background:var(--g3);color:#fff;padding:12px 20px;border-radius:12px;font-size:.9rem;font-weight:500;z-index:300;animation:toastIn .4s ease both;display:none}
+
+/* RESPONSIVE */
+@media(max-width:600px){.stats-strip{grid-template-columns:repeat(3,1fr)}.stat-num{font-size:1.4rem}.bar-name{min-width:90px}}
+
+/* ANIMATIONS */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">🌿 MangoScan</a>
+    <a href="/" class="nav-link active">Scanner</a>
+    <a href="/history/" class="nav-link">History</a>
+    <span class="nav-stats">{{ total_scans }} total scans</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-badge">🔬 AI-Powered Detection</div>
+    <h1>Mango Leaf Disease<br>Classifier</h1>
+    <p class="hero-sub">Upload a leaf photo for instant AI diagnosis with treatment recommendations</p>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-card">
+      <div class="stat-num">{{ total_scans }}</div>
+      <div class="stat-label">Total Scans</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">8</div>
+      <div class="stat-label">Diseases Detected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">95%+</div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: UPLOAD CARD -->
+    <div class="card">
+      <p class="card-title">📷 Upload Leaf Image</p>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+        <span class="drop-icon">🍃</span>
+        <p class="drop-title">Drop leaf image here</p>
+        <p class="drop-sub">or click to browse · JPEG, PNG, WEBP · Max 10MB</p>
+      </div>
+
+      <div id="preview-section">
+        <img id="preview-img" src="" alt="Preview">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="analyzeBtn" disabled>🔬 Analyze Now</button>
+          <button class="btn btn-outline" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <p class="loading-text">Analyzing leaf tissue…</p>
+      </div>
+      <div id="error-box"><div class="err-icon">⚠️</div><p class="err-text" id="err-text"></p></div>
+    </div>
+
+    <!-- RIGHT: RESULTS CARD -->
+    <div class="card">
+      <p class="card-title">📊 Diagnosis Result</p>
+      <div id="empty-state" style="text-align:center;padding:40px 0;opacity:.4">
+        <div style="font-size:48px;margin-bottom:12px">🌿</div>
+        <p style="font-size:.9rem">Upload a leaf image to see diagnosis</p>
+      </div>
+
+      <div id="results-panel">
+        <div class="result-header">
+          <img id="result-thumb" class="result-thumb" src="" alt="">
+          <div class="result-meta">
+            <p class="result-label-tag">Top Diagnosis</p>
+            <p class="result-disease" id="result-disease">—</p>
+            <p class="result-conf" id="result-conf">—</p>
+            <span class="severity-pill" id="sev-pill">—</span>
+          </div>
+        </div>
+
+        <p class="bars-label">All Class Scores</p>
+        <div id="bars-container"></div>
+
+        <div class="action-row">
+          <button class="btn btn-amber" id="reportBtn" onclick="">📄 Download Report</button>
+          <button class="btn btn-outline" id="feedbackBtn">💬 Feedback</button>
+          <button class="btn btn-red" id="deleteBtn">🗑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISEASE INFO PANEL -->
+  <div id="disease-info-panel">
+    <div class="card" style="margin-top:0">
+      <p class="card-title">📚 Disease Information & Recommendations</p>
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="treatment">💊 Treatment</button>
+        <button class="tab-btn" data-tab="prevention">🛡 Prevention</button>
+        <button class="tab-btn" data-tab="spread">🚫 Stop Spreading</button>
+        <button class="tab-btn" data-tab="organic">🌱 Organic Options</button>
+      </div>
+
+      <div class="tab-content active" id="tab-overview">
+        <div id="ov-type" class="type-badge"></div>
+        <p id="ov-sci" class="sci-name"></p>
+        <p id="ov-desc" class="info-desc"></p>
+        <div id="ov-symptoms-wrap">
+          <h4>Symptoms</h4>
+          <ul class="info-list" id="ov-symptoms"></ul>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-treatment">
+        <h4>Treatment Recommendations</h4>
+        <ul class="info-list treatment" id="treat-list"></ul>
+      </div>
+
+      <div class="tab-content" id="tab-prevention">
+        <h4>Prevention Measures</h4>
+        <ul class="info-list prevention" id="prev-list"></ul>
+      </div>
+
+      <div class="tab-content" id="tab-spread">
+        <h4>How to Stop the Disease from Spreading</h4>
+        <ul class="info-list spread" id="spread-list"></ul>
+      </div>
+
+      <div class="tab-content" id="tab-organic">
+        <h4>Organic & Eco-Friendly Options</h4>
+        <ul class="info-list organic" id="organic-list"></ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeFeedback()">✕</button>
+    <p class="modal-title">Your Feedback</p>
+    <p class="modal-sub">Help us improve the AI accuracy</p>
+
+    <div class="form-group">
+      <label class="form-label">Rating</label>
+      <div class="star-row" id="starRow">
+        <button class="star-btn" data-val="1">⭐</button>
+        <button class="star-btn" data-val="2">⭐</button>
+        <button class="star-btn" data-val="3">⭐</button>
+        <button class="star-btn" data-val="4">⭐</button>
+        <button class="star-btn" data-val="5">⭐</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Was the diagnosis correct?</label>
+      <div class="radio-row">
+        <div class="radio-opt" data-val="true" onclick="selectRadio(this,'diag')">✅ Yes</div>
+        <div class="radio-opt" data-val="false" onclick="selectRadio(this,'diag')">❌ No</div>
+        <div class="radio-opt" data-val="" onclick="selectRadio(this,'diag')">🤷 Unsure</div>
+      </div>
+    </div>
+
+    <div class="form-group" id="correctDiseaseGroup" style="display:none">
+      <label class="form-label">What is the correct disease?</label>
+      <select class="form-select" id="correctDisease">
+        <option value="">— Select disease —</option>
+        <option>Anthracnose</option><option>Bacterial Canker</option>
+        <option>Cutting Weevil</option><option>Die Back</option>
+        <option>Gall Midge</option><option>Healthy</option>
+        <option>Powdery Mildew</option><option>Sooty Mould</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Additional Comments</label>
+      <textarea class="form-input" id="feedbackComment" placeholder="Any additional observations…"></textarea>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%" onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+
+<div class="success-toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentScanId = null;
+let selectedRating = 0;
+let selectedDiag = null;
+
+// ── DROP ZONE ──
+const dropZone = $('dropZone'), fileInput = $('fileInput');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    $('preview-img').src = e.target.result;
+    $('preview-section').style.display = 'block';
+    dropZone.style.display = 'none';
+    $('analyzeBtn').disabled = false;
+    $('analyzeBtn')._file = file;
+    hideResults(); hideError();
+  };
+  reader.readAsDataURL(file);
+}
+
+$('resetBtn').addEventListener('click', () => {
+  fileInput.value = '';
+  $('preview-section').style.display = 'none';
+  dropZone.style.display = 'block';
+  $('analyzeBtn').disabled = true;
+  hideResults(); hideError();
+  $('disease-info-panel').style.display = 'none';
+  currentScanId = null;
+});
+
+// ── ANALYZE ──
+$('analyzeBtn').addEventListener('click', async () => {
+  const file = $('analyzeBtn')._file;
+  if (!file) return;
+  $('loading').style.display = 'block';
+  $('preview-section').style.display = 'none';
+  hideResults(); hideError();
+
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const r = await fetch('/predict/', { method: 'POST', body: fd });
+    let data;
+    try { data = await r.json(); } catch { showError(`Server error (${r.status})`); $('loading').style.display='none'; $('preview-section').style.display='block'; return; }
+    $('loading').style.display = 'none';
+    $('preview-section').style.display = 'block';
+    if (data.success) showResults(data);
+    else showError(data.error || 'Unknown error');
+  } catch (err) {
+    $('loading').style.display = 'none';
+    $('preview-section').style.display = 'block';
+    showError('Connection failed. Is Django running at http://127.0.0.1:8000?');
+  }
+});
+
+function showResults(data) {
+  currentScanId = data.scan_id;
+  $('empty-state').style.display = 'none';
+  $('results-panel').style.display = 'block';
+  $('result-thumb').src = data.image_data;
+  $('result-disease').textContent = data.top.label;
+  $('result-conf').textContent = `${data.top.confidence.toFixed(1)}% confidence`;
+
+  const sev = data.disease_info.severity;
+  const pill = $('sev-pill');
+  pill.textContent = data.is_healthy ? '✓ Healthy' : `⚠ ${sev} Severity`;
+  pill.className = `severity-pill sev-${sev.toLowerCase()}`;
+
+  // Bars
+  const container = $('bars-container');
+  container.innerHTML = '';
+  data.predictions.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'bar-row';
+    div.innerHTML = `<span class="bar-name">${p.label}</span><div class="bar-track"><div class="bar-fill${i===0?' top':''}" data-pct="${p.confidence.toFixed(1)}"></div></div><span class="bar-pct">${p.confidence.toFixed(1)}%</span>`;
+    container.appendChild(div);
+  });
+  setTimeout(() => document.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.pct + '%'), 80);
+
+  // Wire buttons
+  $('reportBtn').onclick = () => window.location.href = `/scan/${currentScanId}/report/`;
+  $('feedbackBtn').onclick = () => openFeedback();
+  $('deleteBtn').onclick = () => deleteScan();
+
+  // Disease info panel
+  const di = data.disease_info;
+  populateDiseaseInfo(di);
+  $('disease-info-panel').style.display = 'block';
+  $('disease-info-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function populateDiseaseInfo(di) {
+  $('ov-type').textContent = di.type;
+  $('ov-sci').textContent = di.scientific_name !== 'N/A' ? `Scientific name: ${di.scientific_name}` : '';
+  $('ov-desc').textContent = di.description;
+
+  const renderList = (ulId, items) => {
+    const ul = $(ulId); ul.innerHTML = '';
+    (items || []).forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+  };
+  renderList('ov-symptoms', di.symptoms);
+  $('ov-symptoms-wrap').style.display = di.symptoms?.length ? 'block' : 'none';
+  renderList('treat-list', di.treatment);
+  renderList('prev-list', di.prevention);
+  renderList('spread-list', di.spread_control);
+  renderList('organic-list', di.organic_options);
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    $('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── FEEDBACK ──
+function openFeedback() { $('feedbackModal').classList.add('open'); }
+function closeFeedback() { $('feedbackModal').classList.remove('open'); }
+$('feedbackModal').addEventListener('click', e => { if (e.target === $('feedbackModal')) closeFeedback(); });
+
+document.querySelectorAll('.star-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedRating = parseInt(btn.dataset.val);
+    document.querySelectorAll('.star-btn').forEach((b, i) => b.classList.toggle('active', i < selectedRating));
+  });
+});
+
+function selectRadio(el, group) {
+  document.querySelectorAll(`[onclick*="'${group}'"]`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDiag = el.dataset.val;
+  $('correctDiseaseGroup').style.display = selectedDiag === 'false' ? 'block' : 'none';
+}
+
+async function submitFeedback() {
+  if (!selectedRating) { showToast('Please select a star rating', true); return; }
+  if (!currentScanId) return;
+  const body = {
+    rating: selectedRating,
+    correct_diagnosis: selectedDiag,
+    correct_disease: $('correctDisease').value,
+    comment: $('feedbackComment').value,
+  };
+  const r = await fetch(`/scan/${currentScanId}/feedback/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (data.success) { closeFeedback(); showToast('✅ Feedback submitted — thank you!'); }
+  else showToast('Error submitting feedback', true);
+}
+
+async function deleteScan() {
+  if (!currentScanId) return;
+  if (!confirm('Delete this scan from history?')) return;
+  const r = await fetch(`/scan/${currentScanId}/delete/`, { method: 'DELETE' });
+  const data = await r.json();
+  if (data.success) { hideResults(); $('disease-info-panel').style.display='none'; showToast('Scan deleted'); currentScanId=null; }
+}
+
+// ── HELPERS ──
+function hideResults() { $('results-panel').style.display='none'; $('empty-state').style.display='block'; }
+function showError(msg) { $('err-text').textContent=msg; $('error-box').style.display='block'; }
+function hideError() { $('error-box').style.display='none'; }
+function showToast(msg, isErr=false) {
+  const t = $('toast'); t.textContent = msg; t.style.background = isErr ? '#c1121f' : 'var(--g3)';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+</script>
+</body>
+</html>

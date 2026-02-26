@@ -1,0 +1,338 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan #{{ scan.id }} — MangoScan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--g1:#0f2419;--g2:#1a3a2a;--g3:#2d6a4f;--g4:#52b788;--g5:#95d5b2;--amber:#f4a261;--red:#e63946;--cream:#fefae0;--card:rgba(255,255,255,0.04);--border:rgba(149,213,178,0.18)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--g1);color:var(--cream);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(82,183,136,.1) 0%,transparent 60%);pointer-events:none;z-index:0}
+nav{position:sticky;top:0;z-index:100;background:rgba(15,36,25,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:8px;height:60px}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;background:linear-gradient(135deg,var(--cream),var(--g4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:auto;text-decoration:none}
+.nav-link{padding:6px 16px;border-radius:8px;font-size:.875rem;font-weight:500;color:var(--g5);text-decoration:none;transition:.2s}
+.nav-link:hover{background:rgba(82,183,136,.15);color:var(--cream)}
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:36px 24px 80px;animation:fadeUp .6s ease both}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--g5);text-decoration:none;font-size:.875rem;margin-bottom:24px;opacity:.7;transition:.2s}
+.back-link:hover{opacity:1;color:var(--g4)}
+.detail-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:24px;margin-bottom:28px}
+@media(max-width:700px){.detail-grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:24px;backdrop-filter:blur(16px)}
+.card-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--g5);opacity:.55;margin-bottom:14px}
+.scan-image{width:100%;border-radius:14px;object-fit:cover;max-height:320px;border:1.5px solid var(--border)}
+.disease-name{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;margin-bottom:4px}
+.conf-text{color:var(--amber);font-size:1rem;font-weight:500;margin-bottom:12px}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.meta-pill{padding:4px 12px;border-radius:99px;font-size:.78rem;font-weight:500;border:1px solid}
+.pill-green{background:rgba(82,183,136,.15);color:var(--g4);border-color:rgba(82,183,136,.3)}
+.pill-amber{background:rgba(244,162,97,.15);color:var(--amber);border-color:rgba(244,162,97,.3)}
+.pill-red{background:rgba(230,57,70,.15);color:#f4827e;border-color:rgba(230,57,70,.3)}
+.pill-blue{background:rgba(100,160,220,.1);color:#8ecae6;border-color:rgba(100,160,220,.2)}
+.scan-date{font-size:.82rem;color:var(--g5);opacity:.55;margin-bottom:20px}
+.action-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:.25s}
+.btn-primary{background:linear-gradient(135deg,var(--g3),var(--g4));color:#fff;box-shadow:0 4px 18px rgba(82,183,136,.25)}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-amber{background:linear-gradient(135deg,#c47b2b,var(--amber));color:#fff}
+.btn-amber:hover{transform:translateY(-2px)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--g5)}
+.btn-outline:hover{border-color:var(--g4);background:rgba(82,183,136,.08);color:var(--cream)}
+.btn-red{background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.25);color:#f4827e}
+.btn-red:hover{background:rgba(230,57,70,.22)}
+
+/* BARS */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-name{font-size:.82rem;min-width:140px;color:var(--cream);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:7px;background:rgba(149,213,178,.1);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g3),var(--g4));transition:width .9s cubic-bezier(.34,1.56,.64,1)}
+.bar-fill.top{background:linear-gradient(90deg,var(--g4),var(--amber))}
+.bar-pct{font-size:.78rem;min-width:40px;text-align:right;color:var(--g5);opacity:.75}
+
+/* TABS */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab-btn{padding:6px 14px;border-radius:99px;font-size:.78rem;font-weight:500;cursor:pointer;border:1px solid transparent;color:var(--g5);background:transparent;transition:.2s;font-family:'DM Sans',sans-serif}
+.tab-btn:hover{background:rgba(82,183,136,.1);color:var(--cream)}
+.tab-btn.active{background:rgba(82,183,136,.18);border-color:rgba(82,183,136,.35);color:var(--g4)}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .3s ease both}
+.tab-content h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--g4);margin-bottom:10px}
+.info-desc{font-size:.9rem;line-height:1.7;color:var(--cream);opacity:.85;margin-bottom:12px}
+.sci-name{font-style:italic;font-size:.82rem;color:var(--g5);margin-bottom:10px}
+.info-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.info-list li{font-size:.875rem;color:var(--cream);opacity:.85;padding:8px 12px;background:rgba(82,183,136,.05);border-radius:8px;border-left:3px solid var(--g3);line-height:1.5}
+.info-list.treatment li{border-left-color:var(--amber)}
+.info-list.prevention li{border-left-color:var(--g4)}
+.info-list.spread li{border-left-color:#e63946}
+.info-list.organic li{border-left-color:#74c69d}
+
+/* FEEDBACK SECTION */
+.feedback-section{margin-top:24px}
+.feedback-box{background:rgba(82,183,136,.06);border:1.5px solid rgba(82,183,136,.2);border-radius:14px;padding:20px}
+.stars{font-size:1.4rem;margin-bottom:8px}
+.fb-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.fb-label{font-size:.78rem;color:var(--g5);opacity:.6;min-width:120px;text-transform:uppercase;letter-spacing:.06em}
+.fb-val{font-size:.875rem;color:var(--cream)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;backdrop-filter:blur(8px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex;animation:fadeUp .3s ease both}
+.modal{background:#0f2419;border:1.5px solid var(--border);border-radius:20px;padding:32px;max-width:440px;width:calc(100% - 32px);position:relative}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:4px;color:var(--cream)}
+.modal-sub{font-size:.85rem;color:var(--g5);opacity:.7;margin-bottom:24px}
+.modal-close{position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--g5);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:.2s}
+.modal-close:hover{background:rgba(255,255,255,.08)}
+.form-group{margin-bottom:18px}
+.form-label{font-size:.8rem;font-weight:500;color:var(--g5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:block}
+.star-row{display:flex;gap:8px}
+.star-btn{font-size:1.8rem;background:transparent;border:none;cursor:pointer;filter:grayscale(1);opacity:.4;transition:.2s;padding:2px}
+.star-btn.active,.star-btn:hover{filter:none;opacity:1;transform:scale(1.1)}
+.radio-row{display:flex;gap:10px}
+.radio-opt{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;text-align:center;font-size:.85rem;cursor:pointer;transition:.2s;color:var(--g5)}
+.radio-opt:hover,.radio-opt.selected{border-color:var(--g4);background:rgba(82,183,136,.1);color:var(--cream)}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.9rem;resize:vertical;min-height:80px;transition:.2s}
+.form-input:focus{outline:none;border-color:var(--g4)}
+.form-input::placeholder{color:var(--g5);opacity:.4}
+.form-select{width:100%;background:#0f2419;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.9rem}
+.form-select option{background:#0f2419}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--g3);color:#fff;padding:12px 20px;border-radius:12px;font-size:.9rem;font-weight:500;z-index:300;display:none;animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">🌿 MangoScan</a>
+    <a href="/" class="nav-link">Scanner</a>
+    <a href="/history/" class="nav-link">History</a>
+  </div>
+</nav>
+<div class="page">
+  <a href="/history/" class="back-link">← Back to History</a>
+
+  <div class="detail-grid">
+    <!-- Image + Quick Info -->
+    <div>
+      <div class="card" style="padding:16px;margin-bottom:18px">
+        {% if scan.image %}
+        <img class="scan-image" src="{{ scan.get_image_url }}" alt="{{ scan.top_disease }}">
+        {% else %}
+        <div style="width:100%;height:220px;background:linear-gradient(135deg,#1a3a2a,#2d6a4f);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:48px">🍃</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <p class="card-title">📊 Confidence Scores</p>
+        {% for pred in scan.all_predictions %}
+        <div class="bar-row">
+          <span class="bar-name">{{ pred.label }}</span>
+          <div class="bar-track"><div class="bar-fill {% if forloop.first %}top{% endif %}" style="width:{{ pred.confidence|floatformat:1 }}%"></div></div>
+          <span class="bar-pct">{{ pred.confidence|floatformat:1 }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Diagnosis Details -->
+    <div>
+      <div class="card">
+        <p class="card-title">🔬 Diagnosis Report #{{ scan.id|stringformat:"06d" }}</p>
+        <p class="disease-name">{{ scan.top_disease }}</p>
+        <p class="conf-text">{{ scan.top_confidence|floatformat:1 }}% confidence</p>
+        <p class="scan-date">📅 {{ scan.created_at|date:"F d, Y · g:i A" }}</p>
+        <div class="meta-row">
+          <span class="meta-pill pill-blue">🧬 {{ disease_info.type }}</span>
+          {% if scan.is_healthy %}
+          <span class="meta-pill pill-green">✓ Healthy Leaf</span>
+          {% else %}
+          {% if disease_info.severity == 'High' %}
+          <span class="meta-pill pill-red">⚠ High Severity</span>
+          {% elif disease_info.severity == 'Medium' %}
+          <span class="meta-pill pill-amber">⚡ Medium Severity</span>
+          {% else %}
+          <span class="meta-pill pill-green">{{ disease_info.severity }} Severity</span>
+          {% endif %}
+          {% endif %}
+        </div>
+        <p style="font-size:.9rem;line-height:1.7;color:var(--cream);opacity:.8;margin-bottom:20px">{{ disease_info.description }}</p>
+        <div class="action-btns">
+          <a href="/scan/{{ scan.id }}/report/" class="btn btn-amber">📄 Download Report</a>
+          {% if not has_feedback %}
+          <button class="btn btn-outline" onclick="openFeedback()">💬 Give Feedback</button>
+          {% endif %}
+          <button class="btn btn-red" onclick="deleteScan()">🗑 Delete</button>
+        </div>
+      </div>
+
+      {% if has_feedback %}
+      <div class="card" style="margin-top:18px">
+        <p class="card-title">💬 User Feedback</p>
+        <div class="feedback-box">
+          <div class="stars">{% for i in "12345" %}{% if forloop.counter <= scan.feedback.rating %}⭐{% else %}☆{% endif %}{% endfor %}</div>
+          <div class="fb-row"><span class="fb-label">Rating</span><span class="fb-val">{{ scan.feedback.rating }}/5</span></div>
+          {% if scan.feedback.correct_diagnosis is not None %}
+          <div class="fb-row"><span class="fb-label">Correct?</span><span class="fb-val">{% if scan.feedback.correct_diagnosis %}✅ Yes{% else %}❌ No{% endif %}</span></div>
+          {% endif %}
+          {% if scan.feedback.correct_disease %}
+          <div class="fb-row"><span class="fb-label">Actual Disease</span><span class="fb-val">{{ scan.feedback.correct_disease }}</span></div>
+          {% endif %}
+          {% if scan.feedback.comment %}
+          <div class="fb-row" style="align-items:flex-start"><span class="fb-label">Comment</span><span class="fb-val">{{ scan.feedback.comment }}</span></div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Disease Info Tabs -->
+  {% if not scan.is_healthy %}
+  <div class="card">
+    <p class="card-title">📚 Disease Information & Treatment Guide</p>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="treatment">💊 Treatment</button>
+      <button class="tab-btn" data-tab="prevention">🛡 Prevention</button>
+      <button class="tab-btn" data-tab="spread">🚫 Stop Spreading</button>
+      {% if disease_info.organic_options %}
+      <button class="tab-btn" data-tab="organic">🌱 Organic</button>
+      {% endif %}
+    </div>
+
+    <div class="tab-content active" id="tab-overview">
+      {% if disease_info.scientific_name != 'N/A' %}<p class="sci-name">{{ disease_info.scientific_name }}</p>{% endif %}
+      <p class="info-desc">{{ disease_info.description }}</p>
+      {% if disease_info.symptoms %}
+      <h4>Symptoms</h4>
+      <ul class="info-list">{% for s in disease_info.symptoms %}<li>{{ s }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if disease_info.causes %}
+      <br><h4>Causes</h4>
+      <ul class="info-list">{% for c in disease_info.causes %}<li>{{ c }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    <div class="tab-content" id="tab-treatment">
+      <h4>Treatment Recommendations</h4>
+      <ul class="info-list treatment">{% for t in disease_info.treatment %}<li>{{ t }}</li>{% endfor %}</ul>
+    </div>
+    <div class="tab-content" id="tab-prevention">
+      <h4>Prevention Measures</h4>
+      <ul class="info-list prevention">{% for p in disease_info.prevention %}<li>{{ p }}</li>{% endfor %}</ul>
+    </div>
+    <div class="tab-content" id="tab-spread">
+      <h4>How to Stop the Disease from Spreading</h4>
+      <ul class="info-list spread">{% for s in disease_info.spread_control %}<li>{{ s }}</li>{% endfor %}</ul>
+    </div>
+    {% if disease_info.organic_options %}
+    <div class="tab-content" id="tab-organic">
+      <h4>Organic & Eco-Friendly Options</h4>
+      <ul class="info-list organic">{% for o in disease_info.organic_options %}<li>{{ o }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeFeedback()">✕</button>
+    <p class="modal-title">Your Feedback</p>
+    <p class="modal-sub">Help improve AI accuracy</p>
+    <div class="form-group">
+      <label class="form-label">Rating</label>
+      <div class="star-row" id="starRow">
+        <button class="star-btn" data-val="1">⭐</button><button class="star-btn" data-val="2">⭐</button>
+        <button class="star-btn" data-val="3">⭐</button><button class="star-btn" data-val="4">⭐</button>
+        <button class="star-btn" data-val="5">⭐</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Was the diagnosis correct?</label>
+      <div class="radio-row">
+        <div class="radio-opt" data-val="true" onclick="selectRadio(this,'diag')">✅ Yes</div>
+        <div class="radio-opt" data-val="false" onclick="selectRadio(this,'diag')">❌ No</div>
+        <div class="radio-opt" data-val="" onclick="selectRadio(this,'diag')">🤷 Unsure</div>
+      </div>
+    </div>
+    <div class="form-group" id="correctDiseaseGroup" style="display:none">
+      <label class="form-label">Correct Disease</label>
+      <select class="form-select" id="correctDisease">
+        <option value="">— Select —</option>
+        <option>Anthracnose</option><option>Bacterial Canker</option><option>Cutting Weevil</option>
+        <option>Die Back</option><option>Gall Midge</option><option>Healthy</option>
+        <option>Powdery Mildew</option><option>Sooty Mould</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Additional Comments</label>
+      <textarea class="form-input" id="feedbackComment" placeholder="Any observations…"></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const scanId = {{ scan.id }};
+let selectedRating = 0, selectedDiag = null;
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function openFeedback(){ document.getElementById('feedbackModal').classList.add('open'); }
+function closeFeedback(){ document.getElementById('feedbackModal').classList.remove('open'); }
+document.getElementById('feedbackModal').addEventListener('click', e => { if(e.target===document.getElementById('feedbackModal')) closeFeedback(); });
+
+document.querySelectorAll('.star-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedRating = parseInt(btn.dataset.val);
+    document.querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('active', i < selectedRating));
+  });
+});
+
+function selectRadio(el, group) {
+  document.querySelectorAll(`[onclick*="'${group}'"]`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDiag = el.dataset.val;
+  document.getElementById('correctDiseaseGroup').style.display = selectedDiag === 'false' ? 'block' : 'none';
+}
+
+async function submitFeedback() {
+  if (!selectedRating) { showToast('Please select a star rating', true); return; }
+  const r = await fetch(`/scan/${scanId}/feedback/`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ rating: selectedRating, correct_diagnosis: selectedDiag, correct_disease: document.getElementById('correctDisease').value, comment: document.getElementById('feedbackComment').value })
+  });
+  const data = await r.json();
+  if (data.success) { closeFeedback(); showToast('✅ Feedback submitted!'); setTimeout(() => location.reload(), 1500); }
+  else showToast('Error', true);
+}
+
+async function deleteScan() {
+  if (!confirm('Delete this scan permanently?')) return;
+  const r = await fetch(`/scan/${scanId}/delete/`, { method: 'DELETE' });
+  const data = await r.json();
+  if (data.success) { showToast('Deleted'); setTimeout(() => window.location.href = '/history/', 1200); }
+}
+
+function showToast(msg, isErr=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = isErr ? '#c1121f' : 'var(--g3)';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
